@@ -10,6 +10,7 @@ const API_BASE =
 
 // ── State global ──────────────────────────────────────────────────────────────
 
+let draggedWidget        = null;  // slot en cours de glissement
 let hourlyChart          = null;
 let tempChart            = null;
 let rainChart            = null;
@@ -29,6 +30,8 @@ let ciMode        = "p10-p90"; // ou "p25-p75"
 // ── Initialisation ────────────────────────────────────────────────────────────
 
 document.addEventListener("DOMContentLoaded", () => {
+  loadWidgetOrder();
+  initWidgetDnD();
   initMap();
   loadMapData();
   loadCities();
@@ -131,7 +134,7 @@ function renderAll(data, hourlyData) {
   renderRainChart(labels, forecast);
   renderTable(forecast);
 
-  document.getElementById("content").hidden = false;
+  document.querySelectorAll("[data-city-widget]").forEach(el => { el.hidden = false; });
 }
 
 // ── Cartes résumé ─────────────────────────────────────────────────────────────
@@ -765,10 +768,70 @@ function round1(v) {
 function setLoading(show) {
   document.getElementById("loading").hidden = !show;
   if (show) {
-    document.getElementById("content").hidden = true;
-  } else {
-    document.getElementById("loading").hidden = true;
+    document.querySelectorAll("[data-city-widget]").forEach(el => { el.hidden = true; });
   }
+}
+
+// ── Widgets drag-and-drop ─────────────────────────────────────────────────────
+
+function toggleEditMode() {
+  const isEdit = document.body.classList.toggle("edit-mode");
+  const btn = document.getElementById("btnEditLayout");
+  btn.textContent = isEdit ? "✓ Terminer" : "⚙ Personnaliser";
+  btn.classList.toggle("active", isEdit);
+  document.querySelectorAll(".widget-slot").forEach(el => {
+    el.draggable = isEdit;
+  });
+}
+
+function initWidgetDnD() {
+  const container = document.getElementById("widgetsContainer");
+
+  container.addEventListener("dragstart", e => {
+    if (!document.body.classList.contains("edit-mode")) return;
+    draggedWidget = e.target.closest(".widget-slot");
+    if (!draggedWidget) return;
+    draggedWidget.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+  });
+
+  container.addEventListener("dragover", e => {
+    e.preventDefault();
+    if (!draggedWidget) return;
+    const target = e.target.closest(".widget-slot");
+    if (!target || target === draggedWidget) return;
+    const rect = target.getBoundingClientRect();
+    if (e.clientY < rect.top + rect.height / 2) {
+      container.insertBefore(draggedWidget, target);
+    } else {
+      container.insertBefore(draggedWidget, target.nextSibling);
+    }
+  });
+
+  container.addEventListener("dragend", () => {
+    if (!draggedWidget) return;
+    draggedWidget.classList.remove("dragging");
+    draggedWidget = null;
+    saveWidgetOrder();
+  });
+}
+
+function saveWidgetOrder() {
+  const order = [...document.querySelectorAll(".widget-slot[data-widget]")]
+    .map(el => el.dataset.widget);
+  localStorage.setItem("meteo-widget-order", JSON.stringify(order));
+}
+
+function loadWidgetOrder() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("meteo-widget-order"));
+    if (!Array.isArray(saved) || saved.length === 0) return;
+    const container = document.getElementById("widgetsContainer");
+    saved.forEach(id => {
+      const el = container.querySelector(`.widget-slot[data-widget="${id}"]`);
+      if (el) container.appendChild(el);
+    });
+  } catch {}
 }
 
 function showError(msg) {

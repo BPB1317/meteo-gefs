@@ -40,6 +40,7 @@
         </select>
       </div>
       <span id="runInfo" class="run-info" aria-live="polite"></span>
+      <button id="btnEditLayout" class="edit-layout-btn" onclick="toggleEditMode()">⚙ Personnaliser</button>
     </div>
 
     <div id="loading" class="state-msg loading" hidden>
@@ -48,131 +49,149 @@
     <div id="errorMsg" class="state-msg error" role="alert" hidden></div>
 
     <!-- ══════════════════════════════════════════════════════════════
-         CARTE ANIMÉE — toutes les villes simultanément
+         CONTENEUR DE WIDGETS — ordre sauvegardé dans localStorage
     ══════════════════════════════════════════════════════════════ -->
-    <section class="card map-card" id="mapSection">
-      <div class="card-header">
-        <h2>Carte des prévisions — Animation horaire</h2>
-        <div class="ci-toggle">
-          <label>Intervalle :</label>
-          <button class="ci-btn active" data-ci="p10-p90" onclick="setCIMode(this)">P10–P90</button>
-          <button class="ci-btn" data-ci="p25-p75" onclick="setCIMode(this)">P25–P75</button>
-        </div>
-      </div>
-      <p class="chart-desc">Cliquer sur une ville pour voir l'intervalle de confiance détaillé. La couleur = température médiane.</p>
+    <div id="widgetsContainer">
 
-      <!-- Contrôles d'animation -->
-      <div class="map-controls">
-        <button class="map-btn" id="btnPrev"  onclick="stepMap(-1)" title="Heure précédente">◀</button>
-        <button class="map-btn" id="btnPlay"  onclick="togglePlay()" title="Lecture">▶ Animation</button>
-        <button class="map-btn" id="btnNext"  onclick="stepMap(+1)" title="Heure suivante">▶</button>
-        <span id="mapTimeLabel" class="map-time">—</span>
-        <div class="speed-group">
-          <label>Vitesse</label>
-          <select id="speedSelect" onchange="setSpeed(this.value)">
-            <option value="500">Lente</option>
-            <option value="200" selected>Normale</option>
-            <option value="80">Rapide</option>
-          </select>
-        </div>
-      </div>
-      <input type="range" id="timeSlider" min="0" max="119" value="0"
-             oninput="onSlider(this.value)" class="time-slider" />
-
-      <!-- Légende températures -->
-      <div class="temp-legend">
-        <span class="leg-item" style="--c:#3b82f6">≤10°</span>
-        <span class="leg-item" style="--c:#34d399">15°</span>
-        <span class="leg-item" style="--c:#a3e635">20°</span>
-        <span class="leg-item" style="--c:#facc15">25°</span>
-        <span class="leg-item" style="--c:#fb923c">30°</span>
-        <span class="leg-item" style="--c:#ef4444">35°</span>
-        <span class="leg-item" style="--c:#991b1b">≥40°</span>
-      </div>
-
-      <div id="leafletMap"></div>
-    </section>
-
-    <!-- Contenu par ville (caché jusqu'au chargement) -->
-    <div id="content" hidden>
-
-      <!-- Cartes résumé -->
-      <div class="summary-cards" id="summaryCards"></div>
-
-      <!-- Graphique / Tableau horaire -->
-      <section class="card chart-card">
-        <div class="card-header">
-          <h2>Température heure par heure — 5 jours</h2>
-          <div class="hourly-header-right">
-            <div class="ci-toggle" id="hourlyDayBtns">
-              <label>Durée&nbsp;:</label>
-              <button class="ci-btn active" data-days="5"  onclick="setHourlyDays(this)">5j</button>
-              <button class="ci-btn"        data-days="10" onclick="setHourlyDays(this)">10j</button>
-              <button class="ci-btn"        data-days="16" onclick="setHourlyDays(this)">16j</button>
-            </div>
-            <div class="view-toggle">
-              <button class="vt-btn" id="btnViewChart" onclick="setHourlyView('chart',this)">📈</button>
-              <button class="vt-btn active" id="btnViewTable" onclick="setHourlyView('table',this)">📋</button>
+      <!-- Widget : Carte animée (toujours visible) -->
+      <div class="widget-slot" data-widget="map">
+        <div class="widget-handle"><span class="handle-icon">⠿</span> Carte des prévisions</div>
+        <section class="card map-card" id="mapSection">
+          <div class="card-header">
+            <h2>Carte des prévisions — Animation horaire</h2>
+            <div class="ci-toggle">
+              <label>Intervalle :</label>
+              <button class="ci-btn active" data-ci="p10-p90" onclick="setCIMode(this)">P10–P90</button>
+              <button class="ci-btn" data-ci="p25-p75" onclick="setCIMode(this)">P25–P75</button>
             </div>
           </div>
-        </div>
-        <p class="chart-desc">Incertitude de l'ensemble GEFS heure par heure. Large = forte dispersion des membres.</p>
+          <p class="chart-desc">Cliquer sur une ville pour voir l'intervalle de confiance détaillé. La couleur = température médiane.</p>
 
-        <!-- Vue graphique -->
-        <div id="hourlyChartWrap" class="chart-wrap chart-wrap--hourly" hidden>
-          <canvas id="hourlyChart"></canvas>
-        </div>
+          <!-- Contrôles d'animation -->
+          <div class="map-controls">
+            <button class="map-btn" id="btnPrev"  onclick="stepMap(-1)" title="Heure précédente">◀</button>
+            <button class="map-btn" id="btnPlay"  onclick="togglePlay()" title="Lecture">▶ Animation</button>
+            <button class="map-btn" id="btnNext"  onclick="stepMap(+1)" title="Heure suivante">▶</button>
+            <span id="mapTimeLabel" class="map-time">—</span>
+            <div class="speed-group">
+              <label>Vitesse</label>
+              <select id="speedSelect" onchange="setSpeed(this.value)">
+                <option value="500">Lente</option>
+                <option value="200" selected>Normale</option>
+                <option value="80">Rapide</option>
+              </select>
+            </div>
+          </div>
+          <input type="range" id="timeSlider" min="0" max="119" value="0"
+                 oninput="onSlider(this.value)" class="time-slider" />
 
-        <!-- Vue tableau style Meteociel (défaut) -->
-        <div id="hourlyTableWrap" class="table-scroll"></div>
-      </section>
+          <!-- Légende températures -->
+          <div class="temp-legend">
+            <span class="leg-item" style="--c:#3b82f6">≤10°</span>
+            <span class="leg-item" style="--c:#34d399">15°</span>
+            <span class="leg-item" style="--c:#a3e635">20°</span>
+            <span class="leg-item" style="--c:#facc15">25°</span>
+            <span class="leg-item" style="--c:#fb923c">30°</span>
+            <span class="leg-item" style="--c:#ef4444">35°</span>
+            <span class="leg-item" style="--c:#991b1b">≥40°</span>
+          </div>
 
-      <!-- Graphique journalier -->
-      <section class="card chart-card">
-        <div class="card-header">
-          <h2>Tmax / Tmoy / Tmin — 16 jours</h2>
-          <span class="legend-hint">
-            <span class="band wide" style="background:rgba(251,146,60,.2)"></span> Incert. Tmax &nbsp;
-            <span class="band wide" style="background:rgba(59,130,246,.2)"></span> Incert. Tmin
-          </span>
-        </div>
-        <p class="chart-desc">Pics et creux journaliers avec leur incertitude (P10–P90 des membres).</p>
-        <div class="chart-wrap">
-          <canvas id="tempChart"></canvas>
-        </div>
-      </section>
+          <div id="leafletMap"></div>
+        </section>
+      </div>
 
-      <!-- Précipitations -->
-      <section class="card chart-card">
-        <div class="card-header"><h2>Probabilité de pluie (%)</h2></div>
-        <p class="chart-desc">Fraction des membres GEFS prévoyant &gt;1 mm dans la journée.</p>
-        <div class="chart-wrap chart-wrap--rain">
-          <canvas id="rainChart"></canvas>
-        </div>
-      </section>
+      <!-- Widget : Résumé 5 jours (spécifique à la ville) -->
+      <div class="widget-slot" data-widget="summary" data-city-widget hidden>
+        <div class="widget-handle"><span class="handle-icon">⠿</span> Résumé — 5 jours</div>
+        <div class="summary-cards" id="summaryCards"></div>
+      </div>
 
-      <!-- Tableau -->
-      <section class="card">
-        <h2>Tableau des prévisions</h2>
-        <div class="table-scroll">
-          <table id="forecastTable">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Tmax</th>
-                <th>Tmoy</th>
-                <th>Tmin</th>
-                <th>P(pluie)</th>
-                <th>Pluie moy.</th>
-                <th>Mbr.</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </section>
+      <!-- Widget : Température heure par heure (spécifique à la ville) -->
+      <div class="widget-slot" data-widget="hourly" data-city-widget hidden>
+        <div class="widget-handle"><span class="handle-icon">⠿</span> Température heure par heure</div>
+        <section class="card chart-card">
+          <div class="card-header">
+            <h2>Température heure par heure</h2>
+            <div class="hourly-header-right">
+              <div class="ci-toggle" id="hourlyDayBtns">
+                <label>Durée&nbsp;:</label>
+                <button class="ci-btn active" data-days="5"  onclick="setHourlyDays(this)">5j</button>
+                <button class="ci-btn"        data-days="10" onclick="setHourlyDays(this)">10j</button>
+                <button class="ci-btn"        data-days="16" onclick="setHourlyDays(this)">16j</button>
+              </div>
+              <div class="view-toggle">
+                <button class="vt-btn" id="btnViewChart" onclick="setHourlyView('chart',this)">📈</button>
+                <button class="vt-btn active" id="btnViewTable" onclick="setHourlyView('table',this)">📋</button>
+              </div>
+            </div>
+          </div>
+          <p class="chart-desc">Incertitude de l'ensemble GEFS heure par heure. Large = forte dispersion des membres.</p>
 
-    </div><!-- /content -->
+          <!-- Vue graphique -->
+          <div id="hourlyChartWrap" class="chart-wrap chart-wrap--hourly" hidden>
+            <canvas id="hourlyChart"></canvas>
+          </div>
+
+          <!-- Vue tableau style Meteociel (défaut) -->
+          <div id="hourlyTableWrap" class="table-scroll"></div>
+        </section>
+      </div>
+
+      <!-- Widget : Tmax / Tmoy / Tmin (spécifique à la ville) -->
+      <div class="widget-slot" data-widget="temp" data-city-widget hidden>
+        <div class="widget-handle"><span class="handle-icon">⠿</span> Tmax / Tmoy / Tmin</div>
+        <section class="card chart-card">
+          <div class="card-header">
+            <h2>Tmax / Tmoy / Tmin — 16 jours</h2>
+            <span class="legend-hint">
+              <span class="band wide" style="background:rgba(251,146,60,.2)"></span> Incert. Tmax &nbsp;
+              <span class="band wide" style="background:rgba(59,130,246,.2)"></span> Incert. Tmin
+            </span>
+          </div>
+          <p class="chart-desc">Pics et creux journaliers avec leur incertitude (P10–P90 des membres).</p>
+          <div class="chart-wrap">
+            <canvas id="tempChart"></canvas>
+          </div>
+        </section>
+      </div>
+
+      <!-- Widget : Probabilité de pluie (spécifique à la ville) -->
+      <div class="widget-slot" data-widget="rain" data-city-widget hidden>
+        <div class="widget-handle"><span class="handle-icon">⠿</span> Probabilité de pluie</div>
+        <section class="card chart-card">
+          <div class="card-header"><h2>Probabilité de pluie (%)</h2></div>
+          <p class="chart-desc">Fraction des membres GEFS prévoyant &gt;1 mm dans la journée.</p>
+          <div class="chart-wrap chart-wrap--rain">
+            <canvas id="rainChart"></canvas>
+          </div>
+        </section>
+      </div>
+
+      <!-- Widget : Tableau journalier (spécifique à la ville) -->
+      <div class="widget-slot" data-widget="table" data-city-widget hidden>
+        <div class="widget-handle"><span class="handle-icon">⠿</span> Tableau journalier</div>
+        <section class="card">
+          <h2>Tableau des prévisions</h2>
+          <div class="table-scroll">
+            <table id="forecastTable">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Tmax</th>
+                  <th>Tmoy</th>
+                  <th>Tmin</th>
+                  <th>P(pluie)</th>
+                  <th>Pluie moy.</th>
+                  <th>Mbr.</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+    </div><!-- /widgetsContainer -->
   </main>
 
   <footer>

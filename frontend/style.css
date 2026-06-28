@@ -457,6 +457,75 @@ tbody tr:hover td { background: var(--bg-card-alt); }
 .summary-card .sc-tmax { font-size: .85rem; font-weight: 700; }
 .summary-card .sc-tmin { font-size: .85rem; font-weight: 700; }
 
+/* ── Bouton Personnaliser ────────────────────────────────────────────────── */
+.edit-layout-btn {
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .45rem 1rem;
+  font-size: .875rem;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.edit-layout-btn:hover { border-color: var(--text-muted); color: var(--text); }
+.edit-layout-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Widgets drag-and-drop ───────────────────────────────────────────────── */
+.widget-slot { position: relative; }
+
+/* Barre de poignée — masquée par défaut, visible en mode édition */
+.widget-handle {
+  display: none;
+  align-items: center;
+  gap: .55rem;
+  padding: .45rem 1.1rem;
+  background: var(--bg-card-alt);
+  border: 1px dashed rgba(59,130,246,.45);
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  cursor: grab;
+  color: var(--text-muted);
+  font-size: .8rem;
+  font-weight: 600;
+  user-select: none;
+  transition: background .15s, color .15s;
+}
+.widget-handle:hover { background: var(--accent-dim); color: var(--accent); }
+.handle-icon { font-size: 1.1rem; line-height: 1; opacity: .7; }
+
+/* Mode édition : afficher les poignées + raccorder visuellement au widget */
+.edit-mode .widget-handle { display: flex; }
+
+.edit-mode .widget-slot > .card,
+.edit-mode .widget-slot > section.card {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+/* Bannière indicatrice en haut du conteneur */
+.edit-mode #widgetsContainer::before {
+  content: "Glissez les blocs pour les réorganiser — cliquez ✓ Terminer pour sauvegarder";
+  display: block;
+  text-align: center;
+  font-size: .8rem;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(59,130,246,.3);
+  border-radius: 8px;
+  padding: .5rem 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Widget en cours de glissement */
+.widget-slot.dragging { opacity: .35; }
+
 /* ── Footer ──────────────────────────────────────────────────────────────── */
 footer {
   text-align: center;
