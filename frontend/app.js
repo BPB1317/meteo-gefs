@@ -195,6 +195,9 @@ function renderHourlyChart(forecast) {
   const ctx = document.getElementById("hourlyChart").getContext("2d");
   if (hourlyChart) hourlyChart.destroy();
 
+  const now = new Date();
+  forecast = forecast.filter(h => new Date(h.time) >= now).slice(0, hourlyDays * 24);
+
   const labels  = forecast.map((h) => {
     const d = new Date(h.time);
     // Toutes les 6h montrer date+heure, sinon juste l'heure
@@ -485,8 +488,11 @@ function renderTable(forecast) {
 function renderHourlyTable(forecast) {
   const wrap = document.getElementById("hourlyTableWrap");
 
-  // Limiter au nombre de jours sélectionné
-  const rows = forecast.slice(0, hourlyDays * 24);
+  // Supprimer les heures passées, limiter au nombre de jours sélectionné
+  const now = new Date();
+  const rows = forecast
+    .filter(h => new Date(h.time) >= now)
+    .slice(0, hourlyDays * 24);
 
   // Grouper par jour
   const byDay = {};
