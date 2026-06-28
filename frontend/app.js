@@ -148,17 +148,20 @@ function renderSummaryCards(forecast) {
     const rainClass = prob >= 60 ? "rain-high" : prob >= 30 ? "rain-med" : "rain-low";
     const rainLabel = prob >= 60 ? `🌧 ${prob}%` : prob >= 30 ? `🌦 ${prob}%` : `☀️ ${prob}%`;
 
-    // Tmax/Tmin si disponibles, sinon temp_max/temp_min
-    const tmax = (day.tmax_mean ?? day.temp_max).toFixed(0);
-    const tmin = (day.tmin_mean ?? day.temp_min).toFixed(0);
+    const tmax    = (day.tmax_mean ?? day.temp_max).toFixed(0);
+    const tmin    = (day.tmin_mean ?? day.temp_min).toFixed(0);
+    const tmaxLo  = Math.round(day.tmax_p10 ?? day.tmax_mean ?? day.temp_max);
+    const tmaxHi  = Math.round(day.tmax_p90 ?? day.tmax_mean ?? day.temp_max);
+    const tminLo  = Math.round(day.tmin_p10 ?? day.tmin_mean ?? day.temp_min);
+    const tminHi  = Math.round(day.tmin_p90 ?? day.tmin_mean ?? day.temp_min);
 
     const card = document.createElement("div");
     card.className = "summary-card";
     card.innerHTML = `
       <div class="sc-date">${shortDate(day.date)}</div>
-      <div class="sc-tmax col-hot">${tmax}° max</div>
-      <div class="sc-temp">${day.temp_mean.toFixed(0)}° moy</div>
-      <div class="sc-tmin col-cold">${tmin}° min</div>
+      <div class="sc-row col-hot">↑ ${tmax}° <span class="sc-ci">${tmaxLo}–${tmaxHi}°</span></div>
+      <div class="sc-row sc-moy">${day.temp_mean.toFixed(0)}° moy</div>
+      <div class="sc-row col-cold">↓ ${tmin}° <span class="sc-ci">${tminLo}–${tminHi}°</span></div>
       <div class="sc-rain ${rainClass}">${rainLabel}</div>
     `;
     container.appendChild(card);
@@ -469,15 +472,19 @@ function renderTable(forecast) {
     const prob = Math.round(day.precip_prob * 100);
     const rainEmoji = prob >= 70 ? "🌧" : prob >= 40 ? "🌦" : prob >= 15 ? "🌤" : "☀️";
     const probClass = prob >= 60 ? "rain-high" : prob >= 30 ? "rain-med" : "rain-low";
-    const tmax = (day.tmax_mean ?? day.temp_max).toFixed(1);
-    const tmin = (day.tmin_mean ?? day.temp_min).toFixed(1);
+    const tmax    = (day.tmax_mean ?? day.temp_max).toFixed(1);
+    const tmin    = (day.tmin_mean ?? day.temp_min).toFixed(1);
+    const tmaxLo  = Math.round(day.tmax_p10 ?? day.tmax_mean ?? day.temp_max);
+    const tmaxHi  = Math.round(day.tmax_p90 ?? day.tmax_mean ?? day.temp_max);
+    const tminLo  = Math.round(day.tmin_p10 ?? day.tmin_mean ?? day.temp_min);
+    const tminHi  = Math.round(day.tmin_p90 ?? day.tmin_mean ?? day.temp_min);
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${fullDate(day.date)}</td>
-      <td class="col-hot"><strong>${tmax} °C</strong></td>
+      <td class="col-hot"><strong>${tmax} °C</strong><div class="td-range">${tmaxLo}–${tmaxHi}°</div></td>
       <td>${day.temp_mean.toFixed(1)} °C</td>
-      <td class="col-cold"><strong>${tmin} °C</strong></td>
+      <td class="col-cold"><strong>${tmin} °C</strong><div class="td-range">${tminLo}–${tminHi}°</div></td>
       <td class="${probClass}">${rainEmoji} ${prob} %</td>
       <td>${day.precip_mean.toFixed(1)} mm</td>
       <td class="col-muted">${day.member_count}</td>
@@ -819,12 +826,12 @@ function initWidgetDnD() {
 function saveWidgetOrder() {
   const order = [...document.querySelectorAll(".widget-slot[data-widget]")]
     .map(el => el.dataset.widget);
-  localStorage.setItem("meteo-widget-order", JSON.stringify(order));
+  localStorage.setItem("meteo-widget-order-v2", JSON.stringify(order));
 }
 
 function loadWidgetOrder() {
   try {
-    const saved = JSON.parse(localStorage.getItem("meteo-widget-order"));
+    const saved = JSON.parse(localStorage.getItem("meteo-widget-order-v2"));
     if (!Array.isArray(saved) || saved.length === 0) return;
     const container = document.getElementById("widgetsContainer");
     saved.forEach(id => {

@@ -133,18 +133,27 @@ select:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: .04em;
+  margin-bottom: .35rem;
 }
-.summary-card .sc-temp {
-  font-size: 1.75rem;
+.summary-card .sc-row {
+  font-size: 1rem;
   font-weight: 700;
-  margin: .25rem 0;
+  margin: .15rem 0;
+  line-height: 1.3;
 }
-.summary-card .sc-range {
-  font-size: .8rem;
+.summary-card .sc-moy {
   color: var(--text-muted);
+  font-weight: 500;
+  font-size: .9rem;
+}
+.summary-card .sc-ci {
+  font-size: .75rem;
+  font-weight: 400;
+  opacity: .65;
+  margin-left: .2rem;
 }
 .summary-card .sc-rain {
-  margin-top: .5rem;
+  margin-top: .4rem;
   font-size: .85rem;
   font-weight: 600;
 }
@@ -453,9 +462,13 @@ tbody tr:hover td { background: var(--bg-card-alt); }
 .ht-prob  { font-weight: 600; }
 .ht-rain  { color: var(--text-muted); font-size: .85rem; }
 
-/* ── Summary card — ajout Tmax/Tmin ─────────────────────────────────────── */
-.summary-card .sc-tmax { font-size: .85rem; font-weight: 700; }
-.summary-card .sc-tmin { font-size: .85rem; font-weight: 700; }
+/* ── Intervalle dans le tableau journalier ───────────────────────────────── */
+.td-range {
+  font-size: .75rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  line-height: 1.2;
+}
 
 /* ── Bouton Personnaliser ────────────────────────────────────────────────── */
 .edit-layout-btn {
