@@ -119,8 +119,8 @@ function renderAll(data, hourlyData) {
 
   const runDt = new Date(run_time);
   document.getElementById("runInfo").textContent =
-    `Run GEFS : ${runDt.toLocaleDateString("fr-FR")} ${runDt.toLocaleTimeString("fr-FR", {
-      hour: "2-digit", minute: "2-digit",
+    `Run GEFS : ${runDt.toLocaleDateString("fr-FR", { timeZone: "UTC" })} ${runDt.toLocaleTimeString("fr-FR", {
+      hour: "2-digit", minute: "2-digit", timeZone: "UTC",
     })} UTC`;
 
   const labels = forecast.map((d) => labelDate(d.date));
