@@ -120,11 +120,11 @@ async def scheduled_update() -> None:
 
 
 def create_scheduler() -> AsyncIOScheduler:
-    """Déclenche la mise à jour toutes les 6h, 2h30 après chaque run GEFS (00/06/12/18 UTC)."""
+    """Déclenche la mise à jour toutes les 6h, 30 min après chaque run GEFS (00/06/12/18 UTC)."""
     scheduler = AsyncIOScheduler(timezone="UTC")
     scheduler.add_job(
         scheduled_update,
-        trigger=CronTrigger(hour="2,8,14,20", minute=30),
+        trigger=CronTrigger(hour="0,6,12,18", minute=30),
         id="weather_update",
         name="Mise à jour météo",
         replace_existing=True,
