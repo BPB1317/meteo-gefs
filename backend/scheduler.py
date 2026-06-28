@@ -35,6 +35,8 @@ CITIES = [
     {"name": "Châtillon-sur-Chalaronne",  "lat": 46.117, "lon": 4.954,  "region": "Auvergne-Rhône-Alpes"},
     {"name": "Chanoz-Châtenay",           "lat": 46.008, "lon": 5.080,  "region": "Auvergne-Rhône-Alpes"},
     {"name": "Belleville-sur-Saône",      "lat": 46.108, "lon": 4.748,  "region": "Auvergne-Rhône-Alpes"},
+    # Île-de-France
+    {"name": "Paris",              "lat": 48.853, "lon": 2.350,  "region": "Île-de-France"},
     # Bourgogne-Franche-Comté
     {"name": "Dijon",            "lat": 47.322, "lon": 5.041, "region": "Bourgogne-Franche-Comté"},
     {"name": "Besançon",         "lat": 47.237, "lon": 6.024, "region": "Bourgogne-Franche-Comté"},
