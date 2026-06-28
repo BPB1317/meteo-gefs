@@ -273,7 +273,8 @@ tbody tr:hover td { background: var(--bg-card-alt); }
   font-size: .9rem;
   font-weight: 600;
   color: var(--text);
-  min-width: 200px;
+  min-width: 160px;
+  flex: 1;
 }
 
 .speed-group {
@@ -551,12 +552,94 @@ footer a { color: #60a5fa; text-decoration: none; }
 footer a:hover { text-decoration: underline; }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
-@media (max-width: 640px) {
-  main { padding: 1rem; }
-  header { padding: 1rem; }
-  .controls { gap: .85rem; }
-  select { min-width: 100%; }
-  .run-info { margin-left: 0; }
-  .chart-wrap { height: 230px; }
-  .summary-cards { grid-template-columns: repeat(2, 1fr); }
+
+/* Tablette (≤ 768px) : ajustements légers */
+@media (max-width: 768px) {
+  main { padding: 1.25rem 1.25rem 2.5rem; }
+  select { min-width: 180px; }
+  #leafletMap { height: 380px; }
+  .chart-wrap { height: 250px; }
+  .chart-wrap--hourly { height: 280px; }
+}
+
+/* Mobile (≤ 600px) : layout complet */
+@media (max-width: 600px) {
+  /* Header */
+  header { padding: .85rem 1rem; }
+  header h1 { font-size: 1.2rem; }
+  .subtitle { font-size: .75rem; }
+
+  /* Layout principal */
+  main { padding: .75rem .75rem 2rem; }
+
+  /* Contrôles : empilés verticalement */
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: .6rem;
+    margin-bottom: 1.25rem;
+  }
+  .control-group { width: 100%; }
+  select { min-width: 100%; width: 100%; }
+  .run-info {
+    margin-left: 0;
+    font-size: .75rem;
+    text-align: center;
+  }
+  .edit-layout-btn { width: 100%; text-align: center; }
+
+  /* Cards */
+  .card { padding: 1rem .9rem; margin-bottom: 1.1rem; }
+  .card h2 { font-size: .9rem; }
+  .card-header { gap: .35rem; }
+  .chart-desc { font-size: .78rem; margin-bottom: .75rem; }
+
+  /* CI toggle : masquer le label "Intervalle :" */
+  .ci-toggle label { display: none; }
+
+  /* Charts */
+  .chart-wrap         { height: 210px; }
+  .chart-wrap--hourly { height: 240px; }
+  .chart-wrap--rain   { height: 140px; }
+
+  /* Résumé 5 jours */
+  .summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: .5rem;
+    margin-bottom: 1.1rem;
+  }
+  .summary-card { padding: .75rem .6rem; }
+  .summary-card .sc-row { font-size: .88rem; }
+  .summary-card .sc-ci { font-size: .7rem; }
+  .summary-card .sc-moy { font-size: .82rem; }
+
+  /* Carte Leaflet */
+  #leafletMap { height: 300px; }
+  .map-controls { gap: .4rem; }
+  .map-btn { padding: .4rem .55rem; font-size: .78rem; }
+  .map-time { min-width: 0; flex: 1; font-size: .78rem; }
+  .speed-group { display: none; } /* masqué sur mobile */
+  .temp-legend { gap: .3rem; }
+  .leg-item { font-size: .68rem; }
+
+  /* Tableau horaire */
+  .hourly-table { font-size: .8rem; }
+  .hourly-table thead th { padding: .4rem .45rem; font-size: .68rem; }
+  .hourly-table tbody td { padding: .35rem .45rem; }
+  .ht-temp { min-width: 52px; font-size: .85rem; }
+
+  /* Tableau journalier */
+  tbody td { padding: .45rem .55rem; font-size: .82rem; }
+  thead th { padding: .45rem .55rem; }
+  .td-range { font-size: .68rem; }
+
+  /* En-tête section horaire */
+  .hourly-header-right { gap: .35rem; }
+
+  /* Drag mode */
+  .edit-mode #widgetsContainer::before { font-size: .72rem; padding: .4rem .75rem; }
+  .widget-handle { font-size: .75rem; padding: .4rem .85rem; }
+
+  /* Footer */
+  footer { font-size: .75rem; padding: 1.1rem 1rem; }
 }
