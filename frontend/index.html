@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Météo Probabiliste — AuRA &amp; BFC</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <!-- Leaflet pour la carte -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌦</text></svg>" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <h1>Météo Probabiliste</h1>
+      <p class="subtitle">Prévisions d'ensemble GEFS · Auvergne-Rhône-Alpes &amp; Bourgogne-Franche-Comté</p>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Sélecteur de ville + info run -->
+    <div class="controls">
+      <div class="control-group">
+        <label for="citySelect">Ville</label>
+        <select id="citySelect">
+          <option value="">— Choisir une ville —</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="daysSelect">Horizon</label>
+        <select id="daysSelect">
+          <option value="7" selected>7 jours</option>
+          <option value="10">10 jours</option>
+          <option value="14">14 jours</option>
+          <option value="16">16 jours</option>
+        </select>
+      </div>
+      <span id="runInfo" class="run-info" aria-live="polite"></span>
+    </div>
+
+    <div id="loading" class="state-msg loading" hidden>
+      <span class="spinner"></span> Chargement des données GEFS…
+    </div>
+    <div id="errorMsg" class="state-msg error" role="alert" hidden></div>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         CARTE ANIMÉE — toutes les villes simultanément
+    ══════════════════════════════════════════════════════════════ -->
+    <section class="card map-card" id="mapSection">
+      <div class="card-header">
+        <h2>Carte des prévisions — Animation horaire</h2>
+        <div class="ci-toggle">
+          <label>Intervalle :</label>
+          <button class="ci-btn active" data-ci="p10-p90" onclick="setCIMode(this)">P10–P90</button>
+          <button class="ci-btn" data-ci="p25-p75" onclick="setCIMode(this)">P25–P75</button>
+        </div>
+      </div>
+      <p class="chart-desc">Cliquer sur une ville pour voir l'intervalle de confiance détaillé. La couleur = température médiane.</p>
+
+      <!-- Contrôles d'animation -->
+      <div class="map-controls">
+        <button class="map-btn" id="btnPrev"  onclick="stepMap(-1)" title="Heure précédente">◀</button>
+        <button class="map-btn" id="btnPlay"  onclick="togglePlay()" title="Lecture">▶ Animation</button>
+        <button class="map-btn" id="btnNext"  onclick="stepMap(+1)" title="Heure suivante">▶</button>
+        <span id="mapTimeLabel" class="map-time">—</span>
+        <div class="speed-group">
+          <label>Vitesse</label>
+          <select id="speedSelect" onchange="setSpeed(this.value)">
+            <option value="500">Lente</option>
+            <option value="200" selected>Normale</option>
+            <option value="80">Rapide</option>
+          </select>
+        </div>
+      </div>
+      <input type="range" id="timeSlider" min="0" max="119" value="0"
+             oninput="onSlider(this.value)" class="time-slider" />
+
+      <!-- Légende températures -->
+      <div class="temp-legend">
+        <span class="leg-item" style="--c:#3b82f6">≤10°</span>
+        <span class="leg-item" style="--c:#34d399">15°</span>
+        <span class="leg-item" style="--c:#a3e635">20°</span>
+        <span class="leg-item" style="--c:#facc15">25°</span>
+        <span class="leg-item" style="--c:#fb923c">30°</span>
+        <span class="leg-item" style="--c:#ef4444">35°</span>
+        <span class="leg-item" style="--c:#991b1b">≥40°</span>
+      </div>
+
+      <div id="leafletMap"></div>
+    </section>
+
+    <!-- Contenu par ville (caché jusqu'au chargement) -->
+    <div id="content" hidden>
+
+      <!-- Cartes résumé -->
+      <div class="summary-cards" id="summaryCards"></div>
+
+      <!-- Graphique / Tableau horaire -->
+      <section class="card chart-card">
+        <div class="card-header">
+          <h2>Température heure par heure — 5 jours</h2>
+          <div class="hourly-header-right">
+            <div class="ci-toggle" id="hourlyDayBtns">
+              <label>Durée&nbsp;:</label>
+              <button class="ci-btn active" data-days="5"  onclick="setHourlyDays(this)">5j</button>
+              <button class="ci-btn"        data-days="10" onclick="setHourlyDays(this)">10j</button>
+              <button class="ci-btn"        data-days="16" onclick="setHourlyDays(this)">16j</button>
+            </div>
+            <div class="view-toggle">
+              <button class="vt-btn" id="btnViewChart" onclick="setHourlyView('chart',this)">📈</button>
+              <button class="vt-btn active" id="btnViewTable" onclick="setHourlyView('table',this)">📋</button>
+            </div>
+          </div>
+        </div>
+        <p class="chart-desc">Incertitude de l'ensemble GEFS heure par heure. Large = forte dispersion des membres.</p>
+
+        <!-- Vue graphique -->
+        <div id="hourlyChartWrap" class="chart-wrap chart-wrap--hourly" hidden>
+          <canvas id="hourlyChart"></canvas>
+        </div>
+
+        <!-- Vue tableau style Meteociel (défaut) -->
+        <div id="hourlyTableWrap" class="table-scroll"></div>
+      </section>
+
+      <!-- Graphique journalier -->
+      <section class="card chart-card">
+        <div class="card-header">
+          <h2>Tmax / Tmoy / Tmin — 16 jours</h2>
+          <span class="legend-hint">
+            <span class="band wide" style="background:rgba(251,146,60,.2)"></span> Incert. Tmax &nbsp;
+            <span class="band wide" style="background:rgba(59,130,246,.2)"></span> Incert. Tmin
+          </span>
+        </div>
+        <p class="chart-desc">Pics et creux journaliers avec leur incertitude (P10–P90 des membres).</p>
+        <div class="chart-wrap">
+          <canvas id="tempChart"></canvas>
+        </div>
+      </section>
+
+      <!-- Précipitations -->
+      <section class="card chart-card">
+        <div class="card-header"><h2>Probabilité de pluie (%)</h2></div>
+        <p class="chart-desc">Fraction des membres GEFS prévoyant &gt;1 mm dans la journée.</p>
+        <div class="chart-wrap chart-wrap--rain">
+          <canvas id="rainChart"></canvas>
+        </div>
+      </section>
+
+      <!-- Tableau -->
+      <section class="card">
+        <h2>Tableau des prévisions</h2>
+        <div class="table-scroll">
+          <table id="forecastTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Tmax</th>
+                <th>Tmoy</th>
+                <th>Tmin</th>
+                <th>P(pluie)</th>
+                <th>Pluie moy.</th>
+                <th>Mbr.</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div><!-- /content -->
+  </main>
+
+  <footer>
+    Source : <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo (GEFS NOAA)</a>
+    · Mise à jour toutes les 6h
+    · <a href="/docs" target="_blank" rel="noopener">API docs</a>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

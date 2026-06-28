@@ -1,0 +1,480 @@
+/* ============================================================
+   Météo Probabiliste — Feuille de style
+   Thème sombre, police système, aucune dépendance CSS externe
+   ============================================================ */
+
+:root {
+  --bg:          #0f172a;
+  --bg-card:     #1e293b;
+  --bg-card-alt: #263348;
+  --border:      #334155;
+  --text:        #e2e8f0;
+  --text-muted:  #94a3b8;
+  --accent:      #3b82f6;
+  --accent-dim:  rgba(59,130,246,.15);
+  --cold:        #60a5fa;
+  --hot:         #fb923c;
+  --rain-high:   #2563eb;
+  --rain-med:    #60a5fa;
+  --rain-low:    #bfdbfe;
+  --green:       #34d399;
+  --red:         #f87171;
+  --radius:      12px;
+  --shadow:      0 4px 24px rgba(0,0,0,.35);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+header {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 1.25rem 2rem;
+}
+.header-inner { max-width: 1100px; margin: 0 auto; }
+header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
+.subtitle { color: var(--text-muted); font-size: .875rem; margin-top: .2rem; }
+
+/* ── Main layout ─────────────────────────────────────────────────────────── */
+main { max-width: 1100px; margin: 0 auto; padding: 1.75rem 2rem 3rem; }
+
+/* ── Contrôles ───────────────────────────────────────────────────────────── */
+.controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.25rem;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+}
+.control-group { display: flex; flex-direction: column; gap: .35rem; }
+.control-group label {
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+}
+select {
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .5rem 1rem;
+  font-size: .95rem;
+  cursor: pointer;
+  min-width: 240px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right .75rem center;
+  padding-right: 2.25rem;
+}
+select:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+
+.run-info {
+  margin-left: auto;
+  font-size: .8rem;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: .45rem .85rem;
+  white-space: nowrap;
+}
+
+/* ── États de chargement / erreur ────────────────────────────────────────── */
+.state-msg {
+  border-radius: var(--radius);
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+.state-msg.loading { background: var(--bg-card); color: var(--text-muted); }
+.state-msg.error   { background: #450a0a; border: 1px solid #991b1b; color: #fca5a5; }
+
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Cartes résumé ───────────────────────────────────────────────────────── */
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: .85rem;
+  margin-bottom: 1.75rem;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  text-align: center;
+}
+.summary-card .sc-date {
+  font-size: .75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.summary-card .sc-temp {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: .25rem 0;
+}
+.summary-card .sc-range {
+  font-size: .8rem;
+  color: var(--text-muted);
+}
+.summary-card .sc-rain {
+  margin-top: .5rem;
+  font-size: .85rem;
+  font-weight: 600;
+}
+.rain-high { color: var(--rain-high); }
+.rain-med  { color: var(--rain-med); }
+.rain-low  { color: var(--green); }
+
+/* ── Cartes génériques ───────────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow);
+}
+.card h2 { font-size: 1.05rem; font-weight: 600; }
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: .5rem;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.legend-hint {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+.band {
+  display: inline-block;
+  height: 12px;
+  border-radius: 3px;
+}
+.band.wide   { width: 28px; background: rgba(59,130,246,.25); }
+.band.narrow { width: 20px; background: rgba(59,130,246,.5); }
+.line-hint {
+  display: inline-block;
+  width: 24px;
+  height: 2px;
+  background: #3b82f6;
+  border-radius: 1px;
+}
+
+.chart-desc {
+  font-size: .82rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+.chart-wrap           { position: relative; height: 290px; }
+.chart-wrap--hourly   { height: 320px; }
+.chart-wrap--rain     { height: 190px; }
+
+/* ── Tableau ─────────────────────────────────────────────────────────────── */
+.table-scroll { overflow-x: auto; margin-top: 1rem; }
+table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+thead th {
+  padding: .55rem 1rem;
+  text-align: left;
+  color: var(--text-muted);
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+tbody td {
+  padding: .6rem 1rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: var(--bg-card-alt); }
+
+.col-cold { color: var(--cold); }
+.col-hot  { color: var(--hot); }
+.col-muted { color: var(--text-muted); font-size: .82rem; }
+
+/* ── Carte Leaflet ───────────────────────────────────────────────────────── */
+.map-card { padding: 1.5rem; }
+
+#leafletMap {
+  height: 460px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin-top: .75rem;
+}
+
+.map-controls {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+  margin-bottom: .75rem;
+}
+.map-btn {
+  background: var(--bg-card-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: .4rem .9rem;
+  font-size: .875rem;
+  cursor: pointer;
+  transition: background .15s;
+  white-space: nowrap;
+}
+.map-btn:hover { background: var(--accent-dim); border-color: var(--accent); }
+
+.map-time {
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 200px;
+}
+
+.speed-group {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  margin-left: auto;
+}
+.speed-group label {
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+}
+.speed-group select { min-width: 110px; }
+
+.time-slider {
+  width: 100%;
+  accent-color: var(--accent);
+  margin-bottom: .6rem;
+  cursor: pointer;
+}
+
+/* Légende couleurs températures */
+.temp-legend {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+  margin-bottom: .75rem;
+}
+.leg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+.leg-item::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--c);
+}
+
+/* Sélecteur d'intervalle de confiance */
+.ci-toggle {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.ci-toggle label {
+  font-size: .78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.ci-btn {
+  background: var(--bg-card-alt);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: .25rem .65rem;
+  font-size: .78rem;
+  cursor: pointer;
+  transition: all .15s;
+}
+.ci-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.ci-btn:hover:not(.active) { border-color: var(--text-muted); color: var(--text); }
+
+/* Marqueurs de ville sur la carte */
+.city-marker {
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,.6);
+  box-shadow: 0 2px 6px rgba(0,0,0,.5);
+  border: 1.5px solid rgba(255,255,255,.25);
+  text-align: center;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: transform .1s;
+}
+.city-marker:hover { transform: scale(1.12); }
+
+/* Popup carte dark */
+.leaflet-dark-popup .leaflet-popup-content-wrapper {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  color: #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0,0,0,.5);
+}
+.leaflet-dark-popup .leaflet-popup-tip { background: #1e293b; }
+.leaflet-dark-popup .leaflet-popup-content { margin: .75rem 1rem; }
+.map-popup .mp-time  { font-size: .78rem; color: #94a3b8; margin-top: .1rem; }
+.map-popup .mp-temp  { font-size: 1.6rem; font-weight: 700; margin: .25rem 0; }
+.map-popup .mp-ci    { font-size: .85rem; color: #93c5fd; font-weight: 600; }
+.map-popup .mp-rain  { font-size: .82rem; color: #94a3b8; margin-top: .25rem; }
+
+/* Correction : Leaflet doit avoir un z-index plus faible que les modales */
+.leaflet-pane { z-index: 400; }
+.leaflet-top, .leaflet-bottom { z-index: 401; }
+
+/* ── En-tête section horaire ─────────────────────────────────────────────── */
+.hourly-header-right {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+
+/* ── Toggle graphique / tableau ──────────────────────────────────────────── */
+.view-toggle { display: flex; gap: .4rem; }
+.vt-btn {
+  background: var(--bg-card-alt);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: .3rem .75rem;
+  font-size: .82rem;
+  cursor: pointer;
+  transition: all .15s;
+}
+.vt-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.vt-btn:hover:not(.active) { border-color: var(--text-muted); color: var(--text); }
+
+/* ── Tableau horaire style Meteociel ─────────────────────────────────────── */
+.hourly-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+  margin-top: .5rem;
+}
+.hourly-table thead th {
+  padding: .5rem .75rem;
+  text-align: center;
+  background: var(--bg-card-alt);
+  color: var(--text-muted);
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+.hourly-table tbody td {
+  padding: .4rem .75rem;
+  border-bottom: 1px solid rgba(51,65,85,.5);
+  text-align: center;
+  white-space: nowrap;
+}
+.hourly-table tbody tr:hover td { background: var(--bg-card-alt); }
+.ht-day {
+  background: var(--bg-card-alt);
+  font-weight: 700;
+  font-size: .82rem;
+  text-transform: capitalize;
+  border-right: 2px solid var(--border);
+  vertical-align: middle;
+}
+.ht-hour { font-weight: 600; color: var(--text-muted); }
+.ht-temp {
+  font-weight: 700;
+  font-size: .95rem;
+  border-radius: 5px;
+  min-width: 64px;
+  display: inline-block;
+  padding: .15rem .5rem;
+}
+.ht-range { color: var(--text-muted); font-size: .82rem; }
+.ht-prob  { font-weight: 600; }
+.ht-rain  { color: var(--text-muted); font-size: .85rem; }
+
+/* ── Summary card — ajout Tmax/Tmin ─────────────────────────────────────── */
+.summary-card .sc-tmax { font-size: .85rem; font-weight: 700; }
+.summary-card .sc-tmin { font-size: .85rem; font-weight: 700; }
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+footer {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: .82rem;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid var(--border);
+}
+footer a { color: #60a5fa; text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  main { padding: 1rem; }
+  header { padding: 1rem; }
+  .controls { gap: .85rem; }
+  select { min-width: 100%; }
+  .run-info { margin-left: 0; }
+  .chart-wrap { height: 230px; }
+  .summary-cards { grid-template-columns: repeat(2, 1fr); }
+}

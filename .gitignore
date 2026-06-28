@@ -1,0 +1,13 @@
+.env
+data/
+__pycache__/
+*.pyc
+*.pyo
+*.grib2
+*.idx
+.venv/
+venv/
+.DS_Store
+*.egg-info/
+dist/
+build/

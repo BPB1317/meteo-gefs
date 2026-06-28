@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(conda info --envs 2>$null)",
+      "PowerShell(python --version 2>$null)",
+      "PowerShell(New-Item -ItemType File -Path \"c:\\\\Users\\\\nodet\\\\OneDrive\\\\Desktop\\\\Meteo\\\\Procfile\" -Force)"
+    ]
+  }
+}
