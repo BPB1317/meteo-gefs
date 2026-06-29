@@ -1,16 +1,14 @@
 """
-Récupération des prévisions d'ensemble GEFS via Open-Meteo.
-
-Un seul appel API par ville retourne tous les membres (hourly).
-On produit deux niveaux de résolution :
-  - Journalier (16 jours) : Tmax/Tmin/Tmean + probabilité de pluie
-  - Horaire (5 jours)     : percentiles T heure par heure + pluie/heure
+Récupération des prévisions d'ensemble multi-modèles via Open-Meteo.
+Super-ensemble : GEFS (31) + ICON-EPS DWD (~40) + GEPS Canada (21) ≈ 92 membres.
+Les 3 modèles sont fetché en parallèle par ville ; les membres sont fusionnés avant
+le calcul des percentiles.
 """
 
+import asyncio
 import logging
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Optional
 
 import httpx
 import numpy as np
@@ -20,48 +18,59 @@ from .statistics import compute_ensemble_stats
 logger = logging.getLogger(__name__)
 
 ENSEMBLE_API_URL = "https://ensemble-api.open-meteo.com/v1/ensemble"
-HOURLY_DAYS = 16  # Horizon pour les certitudes horaires (max Open-Meteo)
+HOURLY_DAYS = 16
+
+# Modèles à combiner et leur horizon maximal en jours
+MODELS = {
+    "gfs_seamless":  16,   # GEFS NOAA    — 31 membres, jusqu'à 35 jours
+    "icon_seamless":  7,   # ICON-EPS DWD — ~40 membres, ~7 jours
+    "gem_global":    16,   # GEPS Canada  — 21 membres, jusqu'à 16 jours
+}
 
 
-async def _fetch_raw(
+async def _fetch_model(
     lat: float,
     lon: float,
-    days: int,
+    model: str,
+    max_days: int,
     client: httpx.AsyncClient,
 ) -> dict:
-    """Appel brut Open-Meteo — retourne le JSON complet."""
-    resp = await client.get(
-        ENSEMBLE_API_URL,
-        params={
-            "latitude":      lat,
-            "longitude":     lon,
-            "models":        "gfs_seamless",
-            "hourly":        "temperature_2m,precipitation",
-            "forecast_days": min(days, 16),
-            "timezone":      "UTC",
-        },
-        timeout=60.0,
-    )
-    if not resp.is_success:
-        logger.error(f"Open-Meteo {resp.status_code} ({lat},{lon}): {resp.text[:200]}")
+    """Appel Open-Meteo pour un modèle. Retourne {} si erreur non-bloquante."""
+    try:
+        resp = await client.get(
+            ENSEMBLE_API_URL,
+            params={
+                "latitude":      lat,
+                "longitude":     lon,
+                "models":        model,
+                "hourly":        "temperature_2m,precipitation",
+                "forecast_days": min(max_days, HOURLY_DAYS),
+                "timezone":      "UTC",
+            },
+            timeout=60.0,
+        )
+        if not resp.is_success:
+            logger.warning(f"{model} HTTP {resp.status_code} ({lat},{lon}): {resp.text[:120]}")
+            return {}
+        return resp.json()
+    except Exception as e:
+        logger.warning(f"{model} erreur ({lat},{lon}): {e}")
         return {}
-    return resp.json()
 
 
 async def fetch_city_forecast(
     lat: float,
     lon: float,
     days: int = 16,
-    client: Optional[httpx.AsyncClient] = None,
+    client: httpx.AsyncClient | None = None,
 ) -> dict:
     """
-    Récupère les prévisions ensemble pour une ville.
+    Récupère et fusionne les prévisions de tous les modèles pour une ville.
 
     Returns:
         {
-          "daily":  [ {date, stats: DailyStats}, ... ],   # 16 jours
-          "hourly": [ {time, t_p10, t_p25, t_p50, t_p75, t_p90,
-                        precip_prob, precip_mean}, ... ]  # 5 jours horaire
+          "daily":  [ {date, stats: DailyStats}, ... ],         # jusqu'à 16 jours
+          "hourly": [ {time, t_p10/p25/p50/p75/p90, …}, ... ]  # jusqu'à 16 jours horaire
         }
     """
     own_client = client is None
@@ -69,65 +78,67 @@ async def fetch_city_forecast(
         client = httpx.AsyncClient()
 
     try:
-        data = await _fetch_raw(lat, lon, days, client)
-    except Exception as e:
-        logger.error(f"Open-Meteo erreur ({lat},{lon}): {e}")
-        data = {}
+        raw_results = await asyncio.gather(*(
+            _fetch_model(lat, lon, model, max_days, client)
+            for model, max_days in MODELS.items()
+        ))
     finally:
         if own_client:
             await client.aclose()
 
-    if not data:
+    # ── Fusion des membres par timestamp ──────────────────────────────────────
+    # time_to_temps[t_str]     = [val_mbr_gefs_0, ..., val_mbr_icon_0, ..., val_mbr_geps_0, ...]
+    # date_member_temps[date]  = [ [h0,h1,...] par membre ] — pour les stats journalières
+    time_to_temps       = defaultdict(list)
+    time_to_precips     = defaultdict(list)
+    date_member_temps   = defaultdict(list)
+    date_member_precips = defaultdict(list)
+    total_members = 0
+
+    for model_name, data in zip(MODELS.keys(), raw_results):
+        if not data:
+            continue
+        hourly = data.get("hourly", {})
+        times  = hourly.get("time", [])
+        t_keys = sorted(k for k in hourly if k == "temperature_2m" or k.startswith("temperature_2m_member"))
+        p_keys = sorted(k for k in hourly if k == "precipitation"  or k.startswith("precipitation_member"))
+
+        total_members += len(t_keys)
+        logger.info(f"  {model_name}: {len(t_keys)} membres, {len(times)} heures")
+
+        for k in t_keys:
+            by_date: dict[str, list] = defaultdict(list)
+            for t_str, v in zip(times, hourly[k]):
+                if v is not None:
+                    fv = float(v)
+                    time_to_temps[t_str].append(fv)
+                    by_date[t_str[:10]].append(fv)
+            for date_str, vals in by_date.items():
+                date_member_temps[date_str].append(vals)
+
+        for k in p_keys:
+            by_date = defaultdict(list)
+            for t_str, v in zip(times, hourly[k]):
+                if v is not None:
+                    fv = float(v)
+                    time_to_precips[t_str].append(fv)
+                    by_date[t_str[:10]].append(fv)
+            for date_str, vals in by_date.items():
+                date_member_precips[date_str].append(vals)
+
+    if not time_to_temps:
+        logger.error(f"Aucun modèle n'a retourné de données pour ({lat},{lon})")
         return {"daily": [], "hourly": []}
 
-    hourly  = data.get("hourly", {})
-    times   = hourly.get("time", [])
-
-    # Clés membres détectées automatiquement
-    t_keys = [k for k in hourly if k == "temperature_2m" or k.startswith("temperature_2m_member")]
-    p_keys = [k for k in hourly if k == "precipitation"  or k.startswith("precipitation_member")]
-    logger.debug(f"  → {len(t_keys)} membres température, {len(p_keys)} précip")
-
-    # ── Collecte horaire ──────────────────────────────────────────────────────
-    # Pour chaque heure i : liste des valeurs de tous les membres
-    n = len(times)
-    hour_temps   = [[] for _ in range(n)]  # hour_temps[i]   = [val_m1, val_m2, ...]
-    hour_precips = [[] for _ in range(n)]
-
-    for k in t_keys:
-        for i, v in enumerate(hourly[k]):
-            if v is not None:
-                hour_temps[i].append(float(v))
-
-    for k in p_keys:
-        for i, v in enumerate(hourly[k]):
-            if v is not None:
-                hour_precips[i].append(float(v))
+    logger.info(f"  → {total_members} membres fusionnés, {len(time_to_temps)} timestamps couverts")
 
     # ── Stats journalières ────────────────────────────────────────────────────
-    # Regrouper les valeurs horaires par (date, membre)
-    date_member_temps   = defaultdict(lambda: defaultdict(list))
-    date_member_precips = defaultdict(lambda: defaultdict(list))
-
-    for i, t_str in enumerate(times):
-        date_str = t_str[:10]
-        for ki, k in enumerate(t_keys):
-            v = hourly[k][i]
-            if v is not None:
-                date_member_temps[date_str][ki].append(float(v))
-        for ki, k in enumerate(p_keys):
-            v = hourly[k][i]
-            if v is not None:
-                date_member_precips[date_str][ki].append(float(v))
-
     daily = []
     for date_str in sorted(date_member_temps.keys())[:days]:
-        # Par membre : moyenne, max, min journaliers
-        m_means = [float(np.mean(v)) for v in date_member_temps[date_str].values() if v]
-        m_maxes = [float(np.max(v))  for v in date_member_temps[date_str].values() if v]
-        m_mins  = [float(np.min(v))  for v in date_member_temps[date_str].values() if v]
-        m_prec  = [float(np.sum(v))  for v in date_member_precips[date_str].values() if v]
-
+        m_means = [float(np.mean(v)) for v in date_member_temps[date_str]   if v]
+        m_maxes = [float(np.max(v))  for v in date_member_temps[date_str]   if v]
+        m_mins  = [float(np.min(v))  for v in date_member_temps[date_str]   if v]
+        m_prec  = [float(np.sum(v))  for v in date_member_precips[date_str] if v]
         if not m_means:
             continue
         try:
@@ -140,12 +151,13 @@ async def fetch_city_forecast(
         except ValueError as e:
             logger.warning(f"Stats journalières {date_str}: {e}")
 
-    # ── Stats horaires (5 premiers jours) ─────────────────────────────────────
+    # ── Stats horaires ────────────────────────────────────────────────────────
     max_h = HOURLY_DAYS * 24
     hourly_stats = []
-    for i, t_str in enumerate(times[:max_h]):
-        t_vals = np.array(hour_temps[i])
-        p_vals = np.array(hour_precips[i])
+
+    for t_str in sorted(time_to_temps.keys())[:max_h]:
+        t_vals = np.array(time_to_temps[t_str])
+        p_vals = np.array(time_to_precips.get(t_str, []))
 
         if len(t_vals) == 0:
             continue
@@ -157,11 +169,11 @@ async def fetch_city_forecast(
             "t_p50":       round(float(np.percentile(t_vals, 50)), 2),
             "t_p75":       round(float(np.percentile(t_vals, 75)), 2),
             "t_p90":       round(float(np.percentile(t_vals, 90)), 2),
-            "precip_prob": round(float(np.mean(p_vals > 0.1)), 3),
-            "precip_mean": round(float(np.mean(p_vals)), 3),
+            "precip_prob": round(float(np.mean(p_vals > 0.1)) if len(p_vals) > 0 else 0.0, 3),
+            "precip_mean": round(float(np.mean(p_vals))       if len(p_vals) > 0 else 0.0, 3),
         })
 
-    logger.info(f"  → {len(daily)} jours journaliers, {len(hourly_stats)} heures")
+    logger.info(f"  → {len(daily)} jours journaliers, {len(hourly_stats)} heures horaires")
     return {"daily": daily, "hourly": hourly_stats}
 
 

@@ -1,11 +1,10 @@
 """
-Orchestrateur du pipeline météo — version Open-Meteo.
+Orchestrateur du pipeline météo — super-ensemble multi-modèles.
 
-Pipeline simplifié (vs GRIB) :
-  Pour chaque ville :
-    1. Appel API Open-Meteo (JSON, 1 requête = 31 membres × 16 jours)
-    2. Calcul des statistiques d'ensemble
-    3. Stockage en base SQLite
+Pipeline par ville :
+  1. 3 appels Open-Meteo en parallèle (GEFS 31 + ICON-EPS ~40 + GEPS 21 ≈ 92 membres)
+  2. Fusion des membres et calcul des percentiles
+  3. Stockage PostgreSQL
 """
 
 import logging
