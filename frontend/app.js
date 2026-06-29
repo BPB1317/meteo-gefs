@@ -743,9 +743,10 @@ function setSpeed(ms) {
 }
 
 function setCIMode(btn) {
-  document.querySelectorAll(".ci-btn").forEach((b) => b.classList.remove("active"));
-  btn.classList.add("active");
+  document.querySelectorAll(".ci-btn[data-ci]").forEach((b) => b.classList.remove("active"));
+  document.querySelectorAll(`.ci-btn[data-ci="${btn.dataset.ci}"]`).forEach((b) => b.classList.add("active"));
   ciMode = btn.dataset.ci;
+  if (currentHourlyData) renderHourlySection();
 }
 
 // ── Utilitaires ───────────────────────────────────────────────────────────────

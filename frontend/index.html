@@ -90,6 +90,10 @@
                 <button class="ci-btn"        data-days="10" onclick="setHourlyDays(this)">10j</button>
                 <button class="ci-btn"        data-days="16" onclick="setHourlyDays(this)">16j</button>
               </div>
+              <div class="ci-toggle">
+                <button class="ci-btn active" data-ci="p10-p90" onclick="setCIMode(this)">P10–P90</button>
+                <button class="ci-btn"        data-ci="p25-p75" onclick="setCIMode(this)">P25–P75</button>
+              </div>
               <div class="view-toggle">
                 <button class="vt-btn" id="btnViewChart" onclick="setHourlyView('chart',this)">📈</button>
                 <button class="vt-btn active" id="btnViewTable" onclick="setHourlyView('table',this)">📋</button>
