@@ -502,7 +502,8 @@ function renderHourlyTable(forecast) {
   const now = new Date();
   const rows = forecast
     .filter(h => new Date(h.time) >= now)
-    .slice(0, hourlyDays * 24);
+    .filter(h => new Date(h.time).getUTCHours() % 3 === 0)
+    .slice(0, hourlyDays * 8);
 
   // Grouper par jour
   const byDay = {};
